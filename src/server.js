@@ -28,36 +28,42 @@ export const startServer = () => {
         });
     });
 
-    app.get('/contacts/:contactId', async (req, res) => {
+    app.get('/contacts/:contactId', async (req, res, next) => {
         const {contactId} = req.params;
-        const data = await contactServices.getContactById(contactId);
 
-        if(!data) {
-            return res.status(404).json({
-                message: `Contact with id=${contactId} not found`
+        try {
+            const contact = await contactServices.getContactById(contactId);
+
+            if (!contact) {
+                return res.status(404).json({
+                    message: 'Contact not found'
+                });
+            }
+
+            res.json({
+                status: 200,
+                message: `Contact with ${contactId} successfully find`,
+                contact,
             });
+        } catch (error) {
+            next(error);
         }
-
-        res.json({
-            status: 200,
-            message: `Contact with ${contactId} successfully find`,
-            data,
-        });
     });
 
-    app.use((req, res)=> {
+    app.use('*', (req, res, next) => {
         res.status(404).json({
-            message: `${req.url} not found`
+            message: 'Not found',
         });
     });
 
-    app.use((error, req, res)=> {
+    app.use((err, req, res, next) => {
         res.status(500).json({
-            message: error.message,
+            message: 'Something went wrong',
+            error: err.message,
         });
     });
 
     const port = Number(env("PORT", 3000));
 
-    app.listen(port, ()=> console.log(`Server running on port ${port}`));
+    app.listen(port, () => console.log(`Server running on port ${port}`));
 };
